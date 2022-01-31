@@ -48,7 +48,7 @@ func (b *bookC) GetAllBook(c *fiber.Ctx) error {
 	data := b.cache.GetCacheBook("books")
 	if data != nil {
 		log.Println("2")
-		return helper.Response(c, fiber.StatusOK, data, "Get all book success!", true)
+		return helper.Response(c, fiber.StatusOK, &data, "Get all book success!", true)
 	}
 
 	book, err := b.bookS.GetAll(c.Context())
