@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	// cac "github.com/patrickmn/go-cache"
+	cac "github.com/patrickmn/go-cache"
 )
 
 type BookC interface {
@@ -35,21 +35,19 @@ func NewBookC(bookS services.BookS, cache cache.Cache) BookC {
 }
 
 func (b *bookC) GetAllBook(c *fiber.Ctx) error {
-	// ca := cac.New(5*time.Minute, 10*time.Minute)
-	// err := ca.LoadFile("ok")
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-	// bk, ok := ca.Get("books")
-	// if ok {
-	// 	log.Println("1")
-	// 	return helper.Response(c, fiber.StatusOK, bk, "Get all book success!", true)
-	// }
-	data := b.cache.GetCacheBook("books")
-	if data != nil {
-		log.Println("2")
-		return helper.Response(c, fiber.StatusOK, &data, "Get all book success!", true)
+	ca := cac.New(5*time.Minute, 10*time.Minute)
+	ca.LoadFile("ok")
+
+	bk, ok := ca.Get("books")
+	if ok {
+		log.Println("1")
+		return helper.Response(c, fiber.StatusOK, bk, "Get all book success!", true)
 	}
+	// data := b.cache.GetCacheBook("books")
+	// if data != nil {
+	// 	log.Println("2")
+	// 	return helper.Response(c, fiber.StatusOK, &data, "Get all book success!", true)
+	// }
 
 	book, err := b.bookS.GetAll(c.Context())
 	if err != nil {
@@ -57,15 +55,12 @@ func (b *bookC) GetAllBook(c *fiber.Ctx) error {
 	}
 	
 	log.Println("Book cache")
-	// ca.SetDefault("books", &book)
-	// err = ca.SaveFile("ok")
+	ca.SetDefault("books", &book)
+	ca.SaveFile("ok")
+	// err = b.cache.SetCache("books", &book, time.Minute*10)
 	// if err != nil {
-	// 	log.Println(err)
+	// 	return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
 	// }
-	err = b.cache.SetCache("books", &book, time.Minute*10)
-	if err != nil {
-		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
-	}
 
 	return helper.Response(c, fiber.StatusOK, book, "Get all book success!", true)
 }
@@ -118,18 +113,11 @@ func (b *bookC) AddBook(c *fiber.Ctx) error {
 		return helper.Response(c, fiber.StatusBadRequest, nil, err.Error(), false)
 	}
 
-	// ca := cac.New(5*time.Minute, 10*time.Minute)
-	// err = ca.LoadFile("ok")
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-	
-	// ca.Delete("books")
-	// err = ca.SaveFile("ok")
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-	b.cache.DestroyCache("books", "books/"+fmt.Sprintf("%v", book.GenreID))
+	ca := cac.New(5*time.Minute, 10*time.Minute)
+	ca.LoadFile("ok")
+	ca.Delete("books")
+	ca.SaveFile("ok")
+	// b.cache.DestroyCache("books", "books/"+fmt.Sprintf("%v", book.GenreID))
 
 	return helper.Response(c, fiber.StatusOK, nil, "Add book success!", true)
 }
