@@ -56,7 +56,7 @@ func (b *bookC) GetAllBook(c *fiber.Ctx) error {
 		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
 	}
 	
-	// log.Println("Book cache")
+	log.Println("Book cache")
 	// ca.SetDefault("books", &book)
 	// err = ca.SaveFile("ok")
 	// if err != nil {
