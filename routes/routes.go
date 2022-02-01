@@ -15,7 +15,7 @@ import (
 var (
 	DB *pgxpool.Pool = configs.DatabaseConnection()
 
-	cacheS cache.Cache = cache.NewCache("redis-15271.c56.east-us.azure.cloud.redislabs.com:15271", "dnxQS1TFH2i7EAQnWjGDoC8dNBPTdNbh", 0)
+	cacheS cache.Cache = cache.NewCache()
 
 	jwtS services.JWTS = services.NewJWTS()
 

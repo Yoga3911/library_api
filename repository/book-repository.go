@@ -14,7 +14,7 @@ type BookR interface {
 	GetByGenre(ctx context.Context, genre_id string) (pgx.Rows, error)
 	InsertBook(ctx context.Context, book models.CUBook) error
 	UpdateBook(ctx context.Context, book models.CUBook, id string) error
-	DeleteBook(ctx context.Context, id string) error
+	DeleteBook(ctx context.Context, id string) (pgx.Row, error)
 	GetReview(ctx context.Context, book_id string) (pgx.Rows, error)
 	AddReview(ctx context.Context, id float64, book_id string, review models.AddReview) error
 	CheckReview(ctx context.Context, id float64, book_id string) pgx.Row
@@ -55,10 +55,11 @@ func (b *bookR) UpdateBook(ctx context.Context, book models.CUBook, id string) e
 	return err
 }
 
-func (b *bookR) DeleteBook(ctx context.Context, id string) error {
+func (b *bookR) DeleteBook(ctx context.Context, id string) (pgx.Row, error) {
+	pg := b.db.QueryRow(ctx, sql.GetGenre, id)
 	_, err := b.db.Exec(ctx, sql.DeleteBook, id)
-
-	return err
+	
+	return pg, err
 }
 
 func (b *bookR) GetReview(ctx context.Context, book_id string) (pgx.Rows, error) {

@@ -50,7 +50,7 @@ const Transaction = `CREATE TABLE IF NOT EXISTS book_transaction(
 	transaction_date TIMESTAMP NOT NULL,
 	return_date TIMESTAMP NOT NULL,
 	CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id),
-	CONSTRAINT fk_book FOREIGN KEY (book_id) REFERENCES book(id)
+	CONSTRAINT fk_book FOREIGN KEY (book_id) REFERENCES book(id) ON DELETE CASCADE
 );`
 
 const Req_admin = `CREATE TABLE IF NOT EXISTS req_admin(
@@ -72,7 +72,7 @@ const Reviews = `CREATE TABLE IF NOT EXISTS reviews(
 	rating DECIMAL NOT NULL,
 	post_date TIMESTAMP NOT NULL,
 	CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id),
-	CONSTRAINT fk_book FOREIGN KEY (book_id) REFERENCES book(id)
+	CONSTRAINT fk_book FOREIGN KEY (book_id) REFERENCES book(id) ON DELETE CASCADE
 );`
 
 const R_gender = `DROP TABLE IF EXISTS gender;`

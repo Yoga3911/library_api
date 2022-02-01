@@ -7,7 +7,6 @@ import (
 	"project_restapi/middleware"
 	"project_restapi/models"
 	"project_restapi/services"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -36,21 +35,18 @@ func NewUserC(userS services.UserS, cache cache.Cache) UserC {
 }
 
 func (u *userC) GetAll(c *fiber.Ctx) error {
-	data := u.cache.GetCacheUser("users")
-	if data != nil {
-		return helper.Response(c, fiber.StatusOK, data, "Get all user success!", true)
+	val := u.cache.Get("users")
+	if val != nil {
+		return helper.Response(c, fiber.StatusOK, val, "Get all user success!", true)
 	}
-	
+
 	users, err := u.userS.GetAll(c.Context(), c.Get("Authorization"))
 	if err != nil {
 		return helper.Response(c, fiber.StatusBadRequest, nil, err.Error(), false)
 	}
 	
 	log.Println("User cache")
-	err = u.cache.SetCache("users", users, time.Minute)
-	if err != nil {
-		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
-	}
+	u.cache.Set("users", users)
 
 	return helper.Response(c, fiber.StatusOK, users, "Get all user success!", true)
 }
@@ -95,7 +91,7 @@ func (u *userC) UpdateUser(c *fiber.Ctx) error {
 	update.Token = token
 	update.Password = hash
 
-	u.cache.DestroyCache("users")
+	u.cache.Del("users")
 	
 	return helper.Response(c, fiber.StatusOK, update, "Update user success!", true)
 }
@@ -106,7 +102,7 @@ func (u *userC) DeleteUser(c *fiber.Ctx) error {
 		return helper.Response(c, fiber.StatusBadRequest, nil, err.Error(), false)
 	}
 	
-	u.cache.DestroyCache("users")
+	u.cache.Del("users")
 
 	return helper.Response(c, fiber.StatusOK, nil, "Delete user success!", true)
 }

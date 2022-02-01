@@ -17,7 +17,7 @@ type BookS interface {
 	GetByGenre(ctx context.Context, genre_id string) ([]*models.Book, error)
 	AddBook(ctx context.Context, book models.CUBook) error
 	UpdateBook(ctx context.Context, book models.CUBook, id string) error
-	DeleteBook(ctx context.Context, id string) error
+	DeleteBook(ctx context.Context, id string) (int, error)
 	GetReview(ctx context.Context, book_id string) ([]*models.BookReview, error)
 	AddReview(ctx context.Context, review models.AddReview, token string, book_id string) error
 	UpdateReview(ctx context.Context, token string, book_id string, review models.AddReview) error
@@ -39,7 +39,7 @@ func (b *bookS) GetAll(ctx context.Context) ([]*models.Book, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	defer pg.Close()
 
 	for pg.Next() {
@@ -48,7 +48,7 @@ func (b *bookS) GetAll(ctx context.Context) ([]*models.Book, error) {
 		if err != nil {
 			log.Println(err)
 		}
-		b.Rating = (math.Round(b.Rating*100)/100)
+		b.Rating = (math.Round(b.Rating*100) / 100)
 		book = append(book, &b)
 	}
 
@@ -64,14 +64,14 @@ func (b *bookS) GetByGenre(ctx context.Context, genre_id string) ([]*models.Book
 	}
 
 	defer pg.Close()
-	
+
 	for pg.Next() {
 		var b models.Book
 		err = pg.Scan(&b.ID, &b.Title, &b.Author, &b.Sinopsis, &b.Genre, &b.Quantity, &b.Rating)
 		if err != nil {
 			log.Println(err)
 		}
-		b.Rating = (math.Round(b.Rating*100)/100)
+		b.Rating = (math.Round(b.Rating*100) / 100)
 		book = append(book, &b)
 	}
 
@@ -90,10 +90,15 @@ func (b *bookS) UpdateBook(ctx context.Context, book models.CUBook, id string) e
 	return err
 }
 
-func (b *bookS) DeleteBook(ctx context.Context, id string) error {
-	err := b.bookR.DeleteBook(ctx, id)
+func (b *bookS) DeleteBook(ctx context.Context, id string) (int, error) {
+	var genreID int
+	pg, err := b.bookR.DeleteBook(ctx, id)
+	if err != nil {
+		return 0, err
+	}
+	err = pg.Scan(&genreID)
 
-	return err
+	return genreID, err
 }
 
 func (b *bookS) GetReview(ctx context.Context, book_id string) ([]*models.BookReview, error) {
@@ -148,6 +153,6 @@ func (b *bookS) UpdateReview(ctx context.Context, token string, book_id string, 
 	claims := t.Claims.(jwt.MapClaims)
 
 	err = b.bookR.UpdateReview(ctx, claims["id"].(float64), book_id, review)
-	
+
 	return err
 }

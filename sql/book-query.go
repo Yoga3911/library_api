@@ -25,3 +25,5 @@ const UpdateReview = `CALL reviewUpdate($1, $2, $3, $4)`
 const GetCoin = `SELECT coin FROM users WHERE id = $1`
 
 const UpdateCoin = `UPDATE users SET coin = $2 WHERE id = $1`
+
+const GetGenre = `SELECT genre_id FROM book WHERE id = $1`

@@ -74,7 +74,7 @@ func (a *authC) Register(c *fiber.Ctx) error {
 	user.Coin = 2
 	user.Token = token
 
-	a.cache.DestroyCache("users")
+	a.cache.Del("users")
 
 	return helper.Response(c, fiber.StatusOK, user, "Register success!", true)
 }

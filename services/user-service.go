@@ -208,7 +208,7 @@ func (u *userS) GetById(ctx context.Context, token string) ([]*models.BookT, err
 		var b models.BookT
 		var tDate time.Time
 		var rDate time.Time
-		err = pg.Scan(&b.ID, &b.UserID, &b.BookID, &b.Title, &b.Author, &b.Rating, &tDate, &rDate)
+		err = pg.Scan(&b.ID, &b.UserID, &b.BookID, &b.Title, &b.Author, &b.Sinopsis, &b.Genre, &b.Rating, &tDate, &rDate)
 		if err != nil {
 			log.Println(err)
 		}
@@ -253,7 +253,7 @@ func (u *userS) UserOneBook(ctx context.Context, token string, book_id string) (
 	claims := t.Claims.(jwt.MapClaims)
 	var tDate time.Time
 	var rDate time.Time
-	err = u.userR.UserOneBook(ctx, claims["id"], book_id).Scan(&book.ID, &book.UserID, &book.BookID, &book.Title, &book.Author, &book.Sinopsis, &book.Rating, &book.Genre, &tDate, &rDate)
+	err = u.userR.UserOneBook(ctx, claims["id"], book_id).Scan(&book.ID, &book.UserID, &book.BookID, &book.Title, &book.Author, &book.Sinopsis, &book.Genre, &book.Rating, &tDate, &rDate)
 	book.TDate = tDate.Format("02-01-2006")
 	book.RDate = rDate.Format("02-01-2006")
 	if err != nil {

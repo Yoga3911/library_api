@@ -10,9 +10,9 @@ const UpdateUser = `UPDATE users SET name = $2, email = $3, password = $4, gende
 
 const TakeBook = `CALL takeBook($1, $2)`
 
-const GetById = `SELECT bt.id, bt.user_id, bt.book_id, b.title, b.author, b.rating, bt.transaction_date, bt.return_date FROM book_transaction bt JOIN book b ON (bt.book_id=b.id) WHERE user_id = $1`
+const GetById = `SELECT bt.id, bt.user_id, bt.book_id, b.title, b.author, b.sinopsis, g.genre, b.rating, bt.transaction_date, bt.return_date FROM book_transaction bt JOIN book b ON (bt.book_id=b.id) JOIN genre g ON (g.id=b.genre_id) WHERE user_id = $1`
 
-const GetOneById = `SELECT bt.id, bt.user_id, bt.book_id, b.title, b.author, b.sinopsis, b.rating, g.genre, bt.transaction_date, bt.return_date FROM book_transaction bt JOIN book b ON (bt.book_id=b.id) JOIN genre g ON (g.id=b.genre_id) WHERE user_id = $1 AND book_id = $2`
+const GetOneById = `SELECT bt.id, bt.user_id, bt.book_id, b.title, b.author, b.sinopsis, g.genre, b.rating, bt.transaction_date, bt.return_date FROM book_transaction bt JOIN book b ON (bt.book_id=b.id) JOIN genre g ON (g.id=b.genre_id) WHERE user_id = $1 AND book_id = $2`
 
 const DeleteById = `CALL deleteBook($1, $2)`
 
