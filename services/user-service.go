@@ -15,7 +15,8 @@ import (
 type UserS interface {
 	GetAll(ctx context.Context, token string) ([]*models.User, error)
 	GetOne(ctx context.Context, token string) (models.User, error)
-	Update(ctx context.Context, update models.Update, token string) (string, string, error)
+	Update(ctx context.Context, update models.Update, token string) (string, error)
+	ChangePassword(ctx context.Context, password models.ChangePass, token string) (string, error)
 	Delete(ctx context.Context, token string) error
 	CheckEmail(ctx context.Context, email string, token string) error
 	TakeBook(ctx context.Context, book_id string, token string) error
@@ -40,16 +41,6 @@ func NewUserS(db *pgxpool.Pool, userR repository.UserR, jwtS JWTS) UserS {
 func (u *userS) GetAll(ctx context.Context, token string) ([]*models.User, error) {
 	var users []*models.User
 
-	t, err := u.jwtS.ValidateToken(token)
-	if err != nil {
-		return nil, err
-	}
-
-	claims := t.Claims.(jwt.MapClaims)
-	if claims["role_id"] != 2.0 {
-		return nil, fmt.Errorf("you are not admin")
-	}
-
 	pg, err := u.userR.GetAll(ctx)
 	if err != nil {
 		return nil, err
@@ -61,7 +52,7 @@ func (u *userS) GetAll(ctx context.Context, token string) ([]*models.User, error
 		var user models.User
 		var cDate time.Time
 		var uDate time.Time
-		err = pg.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.GenderID, &user.RoleID, &user.Coin, &user.IsDeleted, &cDate, &uDate, &user.Image)
+		err = pg.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.GenderID, &user.RoleID, &user.Coin, &user.IsActive, &cDate, &uDate, &user.Image)
 		if err != nil {
 			log.Println(err)
 		}
@@ -85,7 +76,7 @@ func (u *userS) GetOne(ctx context.Context, token string) (models.User, error) {
 
 	var cDate time.Time
 	var uDate time.Time
-	err = u.userR.GetOne(ctx, claims["id"]).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.GenderID, &user.RoleID, &user.Coin, &user.IsDeleted, &cDate, &uDate, &user.Image)
+	err = u.userR.GetOne(ctx, claims["id"].(float64)).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.GenderID, &user.RoleID, &user.Coin, &user.IsActive, &cDate, &uDate, &user.Image)
 	user.CreateAt = cDate.Format("02-01-2006")
 	user.UpdateAt = uDate.Format("02-01-2006")
 	if err != nil {
@@ -95,24 +86,53 @@ func (u *userS) GetOne(ctx context.Context, token string) (models.User, error) {
 	return user, nil
 }
 
-func (u *userS) Update(ctx context.Context, update models.Update, t string) (string, string, error) {
+func (u *userS) Update(ctx context.Context, update models.Update, t string) (string, error) {
 	valToken, err := u.jwtS.ValidateToken(t)
 	if err != nil {
-		return "", "", err
+		return "",  err
 	}
 
 	claims := valToken.Claims.(jwt.MapClaims)
 
-	hash, _ := hashAndSalt(update.Password)
-
-	err = u.userR.Update(ctx, update, claims["id"], hash)
+	err = u.userR.Update(ctx, update, claims["id"].(float64))
 	if err != nil {
-		return "", "", err
+		return  "", err
 	}
 
-	token := u.jwtS.GenerateToken(int64(claims["id"].(float64)), update.Name, update.Email, hash, update.GenderID, int16(claims["role_id"].(float64)))
+	token := u.jwtS.GenerateToken(uint64(claims["id"].(float64)), update.Name, update.Email, claims["password"].(string), update.GenderID, uint16(claims["role_id"].(float64)))
+	
+	return token, nil
+}
 
-	return token, hash, nil
+func (u *userS) ChangePassword(ctx context.Context, password models.ChangePass, token string) (string, error) {
+	t, err := u.jwtS.ValidateToken(token)
+	if err != nil {
+		return "", err
+	}
+	
+	claims := t.Claims.(jwt.MapClaims)
+
+	var user models.User
+	u.userR.GetOne(ctx, claims["id"].(float64)).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.GenderID, &user.RoleID, &user.Coin, &user.IsActive, &user.CreateAt, &user.UpdateAt, &user.Image)
+	
+	if err = comparePwd([]byte(user.Password), password.OldPass); err != nil {
+		return "", fmt.Errorf("invalid credential")
+	}
+	
+	if password.NewPass != password.RetypePass {
+		return "", fmt.Errorf("retype password is not same")
+	}
+	
+	hash, err := hashAndSalt(password.NewPass)
+	if err != nil {
+		return "", err
+	}
+	
+	err = u.userR.ChangePassword(ctx, claims["id"].(float64), hash)
+
+	newToken := u.jwtS.GenerateToken(uint64(claims["id"].(float64)), user.Name, user.Email, hash, user.GenderID, uint16(claims["role_id"].(float64)))
+	
+	return newToken, err
 }
 
 func (u *userS) Delete(ctx context.Context, t string) error {
@@ -122,7 +142,7 @@ func (u *userS) Delete(ctx context.Context, t string) error {
 	}
 
 	claims := valToken.Claims.(jwt.MapClaims)
-	err = u.userR.Delete(ctx, claims["id"])
+	err = u.userR.Delete(ctx, claims["id"].(float64))
 
 	return err
 }
@@ -179,7 +199,7 @@ func (u *userS) TakeBook(ctx context.Context, book_id string, token string) erro
 		return err
 	}
 
-	err = u.userR.TakeBook(ctx, book_id, claims["id"])
+	err = u.userR.TakeBook(ctx, book_id, claims["id"].(float64))
 	if err != nil {
 		return err
 	}
@@ -197,13 +217,13 @@ func (u *userS) GetById(ctx context.Context, token string) ([]*models.BookT, err
 
 	claims := t.Claims.(jwt.MapClaims)
 
-	pg, err := u.userR.GetById(ctx, claims["id"])
+	pg, err := u.userR.GetById(ctx, claims["id"].(float64))
 	if err != nil {
 		return nil, err
 	}
 
 	defer pg.Close()
-	
+
 	for pg.Next() {
 		var b models.BookT
 		var tDate time.Time
@@ -229,12 +249,12 @@ func (u *userS) DeleteBookById(ctx context.Context, book_id string, token string
 	claims := t.Claims.(jwt.MapClaims)
 
 	var count int
-	u.userR.ValidateDeleteBook(ctx, book_id, claims["id"]).Scan(&count)
+	u.userR.ValidateDeleteBook(ctx, book_id, claims["id"].(float64)).Scan(&count)
 	if count == 0 {
 		return fmt.Errorf("access denied")
 	}
 
-	err = u.userR.DeleteBookById(ctx, book_id, claims["id"])
+	err = u.userR.DeleteBookById(ctx, book_id, claims["id"].(float64))
 	if err != nil {
 		return err
 	}
@@ -253,7 +273,7 @@ func (u *userS) UserOneBook(ctx context.Context, token string, book_id string) (
 	claims := t.Claims.(jwt.MapClaims)
 	var tDate time.Time
 	var rDate time.Time
-	err = u.userR.UserOneBook(ctx, claims["id"], book_id).Scan(&book.ID, &book.UserID, &book.BookID, &book.Title, &book.Author, &book.Sinopsis, &book.Genre, &book.Rating, &tDate, &rDate)
+	err = u.userR.UserOneBook(ctx, claims["id"].(float64), book_id).Scan(&book.ID, &book.UserID, &book.BookID, &book.Title, &book.Author, &book.Sinopsis, &book.Genre, &book.Rating, &tDate, &rDate)
 	book.TDate = tDate.Format("02-01-2006")
 	book.RDate = rDate.Format("02-01-2006")
 	if err != nil {
@@ -277,7 +297,7 @@ func (u *userS) ReqAdmin(ctx context.Context, token string) error {
 		return fmt.Errorf("you already sent a request")
 	}
 
-	err = u.userR.ReqAdmin(ctx, claims["id"])
+	err = u.userR.ReqAdmin(ctx, claims["id"].(float64))
 	if err != nil {
 		return err
 	}
@@ -292,13 +312,13 @@ func (u *userS) AnsAdmin(ctx context.Context, answer models.Request, token strin
 	}
 
 	claims := t.Claims.(jwt.MapClaims)
-
-	if claims["role_id"] != 2.0 {
+	
+	if claims["role_id"] != 2.0{
 		return "", fmt.Errorf("you are not admin")
 	}
 
 	if !answer.Answer {
-		err = u.userR.UpdateRequest(ctx, answer, claims["id"])
+		err = u.userR.UpdateRequest(ctx, answer, claims["id"].(float64))
 		if err != nil {
 			return "", err
 		}
@@ -306,7 +326,7 @@ func (u *userS) AnsAdmin(ctx context.Context, answer models.Request, token strin
 		return "", fmt.Errorf("request declined")
 	}
 
-	err = u.userR.UpdateRequest(ctx, answer, claims["id"])
+	err = u.userR.UpdateRequest(ctx, answer, claims["id"].(float64))
 	if err != nil {
 		return "", err
 	}
@@ -325,16 +345,6 @@ func (u *userS) AnsAdmin(ctx context.Context, answer models.Request, token strin
 
 func (u *userS) GetAllRequest(ctx context.Context, token string) ([]*models.UserRequest, error) {
 	var users []*models.UserRequest
-
-	t, err := u.jwtS.ValidateToken(token)
-	if err != nil {
-		return users, err
-	}
-
-	claims := t.Claims.(jwt.MapClaims)
-	if claims["role_id"] != 2.0 {
-		return users, fmt.Errorf("you are not admin")
-	}
 
 	pg, err := u.userR.GetAllRequest(ctx)
 	if err != nil {

@@ -9,7 +9,7 @@ import (
 )
 
 type JWTS interface {
-	GenerateToken(id int64, name string, email string, password string, gender_id int16, role_id int16) string
+	GenerateToken(id uint64, name string, email string, password string, gender_id uint16, role_id uint16) string
 	ValidateToken(token string) (*jwt.Token, error)
 }
 
@@ -19,12 +19,12 @@ type jwtS struct {
 }
 
 type jwtCustomClaim struct {
-	ID       int64  `json:"id"`
+	ID       uint64 `json:"id"`
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
-	GenderID int16  `json:"gender_id"`
-	RoleID   int16  `json:"role_id"`
+	GenderID uint16 `json:"gender_id"`
+	RoleID   uint16 `json:"role_id"`
 	jwt.StandardClaims
 }
 
@@ -35,7 +35,7 @@ func NewJWTS() JWTS {
 	}
 }
 
-func (j *jwtS) GenerateToken(id int64, name string, email string, password string, gender_id int16, role_id int16) string {
+func (j *jwtS) GenerateToken(id uint64, name string, email string, password string, gender_id uint16, role_id uint16) string {
 	claims := &jwtCustomClaim{
 		id,
 		name,

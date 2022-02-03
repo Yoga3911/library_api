@@ -16,7 +16,7 @@ func DatabaseConnection() *pgxpool.Pool {
 		log.Println(err.Error())
 	}
 
-	dsn := "prod"
+	dsn := "dev"
 	switch dsn {
 	case "dev":
 		dsn = fmt.Sprintf("host=%s user=%s password=%s port=%s dbname=%s sslmode=disable TimeZone=Asia/Jakarta",
@@ -38,7 +38,7 @@ func DatabaseConnection() *pgxpool.Pool {
 		log.Println(err.Error())
 	}
 
-	action := 0
+	action := 1
 	switch action {
 	case 1:
 		migration(pg)

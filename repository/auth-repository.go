@@ -12,7 +12,8 @@ import (
 type AuthR interface {
 	InsertData(ctx context.Context, user models.Register, hash string) error
 	VerifyData(ctx context.Context, email string) pgx.Row
-	QueryCount(ctx context.Context, name string, email string) pgx.Row
+	CheckDuplicate(ctx context.Context, name string, email string) pgx.Row
+	UpdateActive(ctx context.Context, email string) error
 }
 
 type authR struct {
@@ -35,8 +36,14 @@ func (a *authR) VerifyData(ctx context.Context, email string) pgx.Row {
 	return pg
 }
 
-func (a *authR) QueryCount(ctx context.Context, name string, email string) pgx.Row {
+func (a *authR) CheckDuplicate(ctx context.Context, name string, email string) pgx.Row {
 	pg := a.db.QueryRow(ctx, sql.RegisterVal, name, email)
 
 	return pg
+}
+
+func (a *authR) UpdateActive(ctx context.Context, email string) error {
+	_, err := a.db.Exec(ctx, sql.UpdateActive, email)
+	
+	return err
 }

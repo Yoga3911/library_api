@@ -13,6 +13,7 @@ require (
 
 require (
 	github.com/allegro/bigcache v1.2.1 // indirect
+	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
@@ -21,6 +22,8 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rueian/rueidis v0.0.29 // indirect
+	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+	gopkg.in/mail.v2 v2.3.1 // indirect
 )
 
 require (
@@ -40,6 +43,7 @@ require (
 	github.com/joho/godotenv v1.4.0
 	github.com/klauspost/compress v1.14.1 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
+	github.com/pquerna/otp v1.3.0
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.32.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect

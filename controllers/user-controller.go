@@ -15,6 +15,7 @@ type UserC interface {
 	GetAll(c *fiber.Ctx) error
 	GetByToken(c *fiber.Ctx) error
 	UpdateUser(c *fiber.Ctx) error
+	ChangePassword(c *fiber.Ctx) error
 	DeleteUser(c *fiber.Ctx) error
 	TakeBook(c *fiber.Ctx) error
 	GetBookById(c *fiber.Ctx) error
@@ -35,8 +36,12 @@ func NewUserC(userS services.UserS, cache cache.Cache) UserC {
 }
 
 func (u *userC) GetAll(c *fiber.Ctx) error {
-	val := u.cache.Get("users")
-	if val != nil {
+	err := services.CheckRole(c.Get("Authorization"))
+	if err != nil {
+		return helper.Response(c, fiber.StatusBadRequest, nil, err.Error(), false)
+	}
+
+	if val := u.cache.Get("users"); val != nil {
 		return helper.Response(c, fiber.StatusOK, val, "Get all user success!", true)
 	}
 
@@ -44,7 +49,7 @@ func (u *userC) GetAll(c *fiber.Ctx) error {
 	if err != nil {
 		return helper.Response(c, fiber.StatusBadRequest, nil, err.Error(), false)
 	}
-	
+
 	log.Println("User cache")
 	u.cache.Set("users", users)
 
@@ -68,48 +73,62 @@ func (u *userC) UpdateUser(c *fiber.Ctx) error {
 		return helper.Response(c, fiber.StatusNotAcceptable, nil, err.Error(), false)
 	}
 
-	err = u.userS.CheckEmail(c.Context(), update.Email, c.Get("Authorization"))
-	if err != nil {
+	if err = u.userS.CheckEmail(c.Context(), update.Email, c.Get("Authorization")); err != nil {
 		return helper.Response(c, fiber.StatusNotAcceptable, nil, err.Error(), false)
 	}
 
-	err = middleware.InputChecker(update.Name, update.Email, update.Password)
-	if err != nil {
+	if err = middleware.InputChecker(update.Name, update.Email); err != nil {
 		return helper.Response(c, fiber.StatusNotAcceptable, nil, err.Error(), false)
 	}
 
-	errors := middleware.StructValidator(update)
-	if errors != nil {
+	if errors := middleware.StructValidator(update); errors != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, errors, false)
 	}
 
-	token, hash, err := u.userS.Update(c.Context(), update, c.Get("Authorization"))
+	token, err := u.userS.Update(c.Context(), update, c.Get("Authorization"))
+	if err != nil {
+		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
+	}
+	u.cache.Del("users")
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data":    update,
+		"token":   token,
+		"status":  true,
+		"message": "Update user success",
+	})
+}
+
+func (u *userC) ChangePassword(c *fiber.Ctx) error {
+	var password models.ChangePass
+
+	err := c.BodyParser(&password)
 	if err != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
 	}
 
-	update.Token = token
-	update.Password = hash
-
-	u.cache.Del("users")
-	
-	return helper.Response(c, fiber.StatusOK, update, "Update user success!", true)
-}
-
-func (u *userC) DeleteUser(c *fiber.Ctx) error {
-	err := u.userS.Delete(c.Context(), c.Get("Authorization"))
+	token, err := u.userS.ChangePassword(c.Context(), password, c.Get("Authorization"))
 	if err != nil {
 		return helper.Response(c, fiber.StatusBadRequest, nil, err.Error(), false)
 	}
-	
+
+	u.cache.Del("users")
+
+	return helper.Response(c, fiber.StatusOK, token, "Change user password success!", true)
+}
+
+func (u *userC) DeleteUser(c *fiber.Ctx) error {
+	if err := u.userS.Delete(c.Context(), c.Get("Authorization")); err != nil {
+		return helper.Response(c, fiber.StatusBadRequest, nil, err.Error(), false)
+	}
+
 	u.cache.Del("users")
 
 	return helper.Response(c, fiber.StatusOK, nil, "Delete user success!", true)
 }
 
 func (u *userC) TakeBook(c *fiber.Ctx) error {
-	err := u.userS.TakeBook(c.Context(), c.Params("id"), c.Get("Authorization"))
-	if err != nil {
+	if err := u.userS.TakeBook(c.Context(), c.Params("id"), c.Get("Authorization")); err != nil {
 		return helper.Response(c, fiber.StatusBadRequest, nil, err.Error(), false)
 	}
 
@@ -126,8 +145,7 @@ func (u *userC) GetBookById(c *fiber.Ctx) error {
 }
 
 func (u *userC) DeleteBookById(c *fiber.Ctx) error {
-	err := u.userS.DeleteBookById(c.Context(), c.Params("id"), c.Get("Authorization"))
-	if err != nil {
+	if err := u.userS.DeleteBookById(c.Context(), c.Params("id"), c.Get("Authorization")); err != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
 	}
 
@@ -144,8 +162,7 @@ func (u *userC) UserBookById(c *fiber.Ctx) error {
 }
 
 func (u *userC) RequestAdmin(c *fiber.Ctx) error {
-	err := u.userS.ReqAdmin(c.Context(), c.Get("Authorization"))
-	if err != nil {
+	if err := u.userS.ReqAdmin(c.Context(), c.Get("Authorization")); err != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
 	}
 
@@ -159,20 +176,20 @@ func (u *userC) RequestAnswer(c *fiber.Ctx) error {
 	if err != nil {
 		return helper.Response(c, fiber.StatusNotAcceptable, nil, err.Error(), false)
 	}
-	
+
 	token, err := u.userS.AnsAdmin(c.Context(), ans, c.Get("Authorization"))
 	if err != nil {
 		return helper.Response(c, fiber.StatusBadRequest, nil, err.Error(), false)
 	}
-	
+
 	return helper.Response(c, fiber.StatusOK, token, "Review request is success!", true)
 }
 
-func (u *userC) GetRequest(c *fiber.Ctx) error {	
+func (u *userC) GetRequest(c *fiber.Ctx) error {
 	users, err := u.userS.GetAllRequest(c.Context(), c.Get("Authorization"))
 	if err != nil {
 		return helper.Response(c, fiber.StatusBadRequest, nil, err.Error(), false)
 	}
-	
+
 	return helper.Response(c, fiber.StatusOK, users, "Get all request success!", true)
 }

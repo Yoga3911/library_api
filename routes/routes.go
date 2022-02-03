@@ -15,6 +15,8 @@ import (
 var (
 	DB *pgxpool.Pool = configs.DatabaseConnection()
 
+	redisS cache.RedisC = cache.NewRedisC("redis-15271.c56.east-us.azure.cloud.redislabs.com:15271", "dnxQS1TFH2i7EAQnWjGDoC8dNBPTdNbh", 0)
+
 	cacheS cache.Cache = cache.NewCache()
 
 	jwtS services.JWTS = services.NewJWTS()
@@ -25,7 +27,7 @@ var (
 
 	authR repository.AuthR  = repository.NewAuthR(DB)
 	authS services.AuthS    = services.NewAuthS(authR, jwtS)
-	authC controllers.AuthC = controllers.NewAuthC(authS, cacheS)
+	authC controllers.AuthC = controllers.NewAuthC(authS, cacheS, redisS)
 
 	bookR repository.BookR  = repository.NewBookR(DB)
 	bookS services.BookS    = services.NewBookS(bookR, jwtS)
@@ -38,9 +40,13 @@ func Route(app *fiber.App) {
 	api.Post("/auth/register", authC.Register)
 	api.Get("/auth/logout", authC.Logout)
 
+	api.Get("/auth/otp/:email", authC.SendVerif)
+	api.Post("/auth/otp", authC.Verif)
+
 	api.Get("/users", userC.GetAll)
 	api.Get("/user", userC.GetByToken)
 	api.Put("/user", userC.UpdateUser)
+	api.Patch("/user/pass", userC.ChangePassword)
 	api.Patch("/user", userC.DeleteUser)
 	api.Get("/user/book/:id", userC.UserBookById)
 	api.Get("/user/req", userC.GetRequest)

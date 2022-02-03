@@ -2,26 +2,41 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"github.com/jasonlvhit/gocron"
 	"log"
 	"os"
+	"os/signal"
 	"project_restapi/routes"
+	"syscall"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/jasonlvhit/gocron"
 )
 
 func main() {
 	defer routes.DB.Close()
-
-	log.Println("Web Server")
 	app := fiber.New()
 	routes.Route(app)
-	port := fmt.Sprintf(":%v", os.Getenv("PORT"))
 
-	goUpdate()
-	
-	app.Listen(port)
-	
+	go func() {
+		log.Println("Web Server")
+		log.Fatal(app.Listen(":"+os.Getenv("PORT")))
+	}()
+
+	go func() {
+		goUpdate()
+	}()
+
+	// Block main goroutine process
+	osCh := make(chan os.Signal)
+	stopCh := make(chan bool)
+	signal.Notify(osCh, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-osCh
+		log.Println("exiting process")
+		stopCh <- true
+		os.Exit(0)
+	}()
+	<-stopCh
 }
 
 func goUpdate() {
@@ -35,7 +50,5 @@ func goUpdate() {
 		log.Println("Cron job done!")
 	})
 
-	go func() {
-		<-gocron.Start()
-	}()
+	<-gocron.Start()
 }

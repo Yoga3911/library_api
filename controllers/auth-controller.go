@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"log"
 	"project_restapi/cache"
 	"project_restapi/helper"
 	"project_restapi/middleware"
@@ -13,16 +14,19 @@ import (
 type AuthC interface {
 	Login(c *fiber.Ctx) error
 	Register(c *fiber.Ctx) error
+	SendVerif(c *fiber.Ctx) error
+	Verif(c *fiber.Ctx) error
 	Logout(c *fiber.Ctx) error
 }
 
 type authC struct {
 	authS services.AuthS
 	cache cache.Cache
+	redis cache.RedisC
 }
 
-func NewAuthC(authS services.AuthS, cache cache.Cache) AuthC {
-	return &authC{authS: authS, cache: cache}
+func NewAuthC(authS services.AuthS, cache cache.Cache, redis cache.RedisC) AuthC {
+	return &authC{authS: authS, cache: cache, redis: redis}
 }
 
 func (a *authC) Login(c *fiber.Ctx) error {
@@ -33,17 +37,21 @@ func (a *authC) Login(c *fiber.Ctx) error {
 		return helper.Response(c, fiber.StatusNotAcceptable, nil, err.Error(), false)
 	}
 
-	errors := middleware.StructValidator(user)
-	if errors != nil {
+	if errors := middleware.StructValidator(user); errors != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, errors, false)
 	}
 
-	usr, err := a.authS.VerifyCredential(c.Context(), user)
+	token, usr, err := a.authS.VerifyCredential(c.Context(), user)
 	if err != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
 	}
 
-	return helper.Response(c, fiber.StatusOK, usr, "Login success!", true)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": usr,
+		"token": token,
+		"status": true,
+		"message": "Login success!",
+	})
 }
 
 func (a *authC) Register(c *fiber.Ctx) error {
@@ -54,31 +62,61 @@ func (a *authC) Register(c *fiber.Ctx) error {
 		return helper.Response(c, fiber.StatusNotAcceptable, nil, err.Error(), false)
 	}
 
-	err = middleware.InputChecker(user.Name, user.Email, user.Password)
-	if err != nil {
+	if err = middleware.InputChecker(user.Name, user.Email, user.Password); err != nil {
 		return helper.Response(c, fiber.StatusNotAcceptable, nil, err.Error(), false)
 	}
 
-	errors := middleware.StructValidator(user)
-	if errors != nil {
+	if errors := middleware.StructValidator(user); errors != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, errors, false)
 	}
 
-	token, hash, err := a.authS.CreateUser(c.Context(), user)
-	if err != nil {
+	if err = a.authS.CreateUser(c.Context(), user); err != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
 	}
 
-	user.Password = hash
-	user.RoleID = 1
-	user.Coin = 2
-	user.Token = token
-
-	a.cache.Del("users")
-
-	return helper.Response(c, fiber.StatusOK, user, "Register success!", true)
+	return helper.Response(c, fiber.StatusOK, nil, "Register success!", true)
 }
 
-func (a *authC) Logout(c *fiber.Ctx) error {	
+func (a *authC) Logout(c *fiber.Ctx) error {
 	return helper.Response(c, fiber.StatusOK, nil, "Logout success!", true)
+}
+
+func (a *authC) SendVerif(c *fiber.Ctx) error {
+	var user models.Register
+
+	user.Email = c.Params("email")
+
+	otp, err := helper.GenerateOTP(6)
+	if err != nil {
+		log.Println(err)
+	}
+
+	a.redis.Set(user.Email, &otp)
+
+	helper.SendOTP(otp, user.Email)
+
+	return helper.Response(c, fiber.StatusOK, nil, "Send OTP successful!", true)
+}
+
+func (a *authC) Verif(c *fiber.Ctx) error {
+	var otp models.OTP
+
+	err := c.BodyParser(&otp)
+	if err != nil {
+		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
+	}
+	code := a.redis.Get(otp.Email)
+
+	if code != otp.Otp {
+		return helper.Response(c, fiber.StatusBadRequest, nil, "Invalid OTP code!", false)
+	}
+	
+	if err = a.authS.UpdateActive(c.Context(), otp.Email); err != nil {
+		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
+	}
+	
+	a.redis.Del(otp.Email)
+	a.cache.Del("users")
+
+	return helper.Response(c, fiber.StatusOK, nil, "Verify OTP code success!", true)
 }

@@ -18,7 +18,7 @@ const Users = `CREATE TABLE IF NOT EXISTS users(
 	gender_id SERIAL NOT NULL,
 	role_id SERIAL NOT NULL,
 	coin INT NOT NULL,
-	is_deleted BOOL NOT NULL,
+	is_active BOOL NOT NULL,
 	create_at TIMESTAMP NOT NULL,
 	update_at TIMESTAMP NOT NULL,
 	delete_at TIMESTAMP,
@@ -118,14 +118,13 @@ BEGIN
 END;
 $$;`
 
-const Func_create_validate = `CREATE OR REPLACE FUNCTION createValidate(out count INT, n VARCHAR, e VARCHAR, out nameC INT, out emailC INT)
+const Func_create_validate = `CREATE OR REPLACE FUNCTION createValidate(n VARCHAR, e VARCHAR, out nameC int, out emailC int)
 language plpgsql
 as 
 $$
 BEGIN
-	SELECT COUNT(*) INTO nameC FROM users WHERE name =  $2;
-	SELECT COUNT(*) INTO emailC FROM users WHERE email = $3;
-	SELECT COUNT(*) INTO count FROM users;
+	SELECT count(*) INTO nameC FROM users WHERE name =  $1;
+	SELECT count(*) INTO emailC FROM users WHERE email = $2;
 END;
 $$;`
 
@@ -200,7 +199,7 @@ $$
     BEGIN
         DROP PROCEDURE takeBook(int, int);
         DROP PROCEDURE deleteBook(int, int);
-        DROP FUNCTION createValidate(out int, varchar, varchar, out int, out int);
+        DROP FUNCTION createValidate(varchar, varchar, out varchar, out varchar);
 		DROP PROCEDURE updateReq(int, int, boolean);
 		DROP PROCEDURE reviewUser(int, int, varchar, int);
 		DROP PROCEDURE reviewUpdate(int, int, varchar, int);

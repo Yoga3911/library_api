@@ -72,23 +72,19 @@ func (b *bookC) AddBook(c *fiber.Ctx) error {
 
 	var book models.CUBook
 
-	err = c.BodyParser(&book)
-	if err != nil {
+	if err = c.BodyParser(&book); err != nil {
 		return helper.Response(c, fiber.StatusNotAcceptable, nil, err.Error(), false)
 	}
 
-	err = middleware.InputChecker(book.Title, book.Author)
-	if err != nil {
+	if err = middleware.InputChecker(book.Title, book.Author); err != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
 	}
 
-	errors := middleware.StructValidator(book)
-	if errors != nil {
+	if errors := middleware.StructValidator(book); errors != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, errors, false)
 	}
 
-	err = b.bookS.AddBook(c.Context(), book)
-	if err != nil {
+	if err = b.bookS.AddBook(c.Context(), book); err != nil {
 		return helper.Response(c, fiber.StatusBadRequest, nil, err.Error(), false)
 	}
 
@@ -105,23 +101,19 @@ func (b *bookC) UpdateBook(c *fiber.Ctx) error {
 
 	var book models.CUBook
 
-	err = c.BodyParser(&book)
-	if err != nil {
+	if err = c.BodyParser(&book); err != nil {
 		return helper.Response(c, fiber.StatusNotAcceptable, nil, err.Error(), false)
 	}
 
-	err = middleware.InputChecker(book.Title, book.Author)
-	if err != nil {
+	if err = middleware.InputChecker(book.Title, book.Author); err != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
 	}
 
-	errors := middleware.StructValidator(book)
-	if errors != nil {
+	if errors := middleware.StructValidator(book); errors != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, errors, false)
 	}
 
-	err = b.bookS.UpdateBook(c.Context(), book, c.Params("id"))
-	if err != nil {
+	if err = b.bookS.UpdateBook(c.Context(), book, c.Params("id")); err != nil {
 		return helper.Response(c, fiber.StatusBadRequest, nil, err.Error(), false)
 	}
 
@@ -141,7 +133,7 @@ func (b *bookC) DeleteBook(c *fiber.Ctx) error {
 		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
 	}
 
-	b.cache.Del("books", "books/"+strconv.FormatInt(int64(genreID), 10), "review/" + c.Params("id"))
+	b.cache.Del("books", "books/"+strconv.FormatInt(int64(genreID), 10), "review/"+c.Params("id"))
 
 	return helper.Response(c, fiber.StatusOK, nil, "Delete book success!", true)
 }
@@ -170,18 +162,16 @@ func (b *bookC) AddReview(c *fiber.Ctx) error {
 		return helper.Response(c, fiber.StatusNotAcceptable, nil, err.Error(), false)
 	}
 
-	errors := middleware.StructValidator(review)
-	if errors != nil {
+	if errors := middleware.StructValidator(review); errors != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, errors, false)
 	}
 
-	err = b.bookS.AddReview(c.Context(), review, c.Get("Authorization"), c.Params("id"))
-	if err != nil {
+	if err = b.bookS.AddReview(c.Context(), review, c.Get("Authorization"), c.Params("id")); err != nil {
 		return helper.Response(c, fiber.StatusBadRequest, nil, err.Error(), false)
 	}
-	
-	b.cache.Del("books", "review/" + c.Params("id"))
-	
+
+	b.cache.Del("books", "review/"+c.Params("id"))
+
 	return helper.Response(c, fiber.StatusOK, nil, "Add reviews success!", true)
 }
 
@@ -192,13 +182,12 @@ func (b *bookC) UpdateReview(c *fiber.Ctx) error {
 	if err != nil {
 		return helper.Response(c, fiber.StatusNotAcceptable, nil, err.Error(), false)
 	}
-	
-	err = b.bookS.UpdateReview(c.Context(), c.Get("Authorization"), c.Params("id"), review)
-	if err != nil {
+
+	if err = b.bookS.UpdateReview(c.Context(), c.Get("Authorization"), c.Params("id"), review); err != nil {
 		return helper.Response(c, fiber.StatusBadRequest, nil, err.Error(), false)
 	}
 
-	b.cache.Del("books", "review/" + c.Params("id"))
+	b.cache.Del("books", "review/"+c.Params("id"))
 
 	return helper.Response(c, fiber.StatusOK, nil, "Update reviews success!", true)
 }

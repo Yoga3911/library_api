@@ -1,12 +1,12 @@
 package sql
 
-const GetAll = `SELECT id, name, email, password, gender_id, role_id, coin, is_deleted, create_at, update_at, image FROM users WHERE is_deleted = false ORDER BY id`
+const GetAll = `SELECT id, name, email, password, gender_id, role_id, coin, is_active, create_at, update_at, image FROM users WHERE is_active = true ORDER BY id`
 
-const GetOne = `SELECT id, name, email, password, gender_id, role_id, coin, is_deleted, create_at, update_at, image FROM users WHERE id = $1`
+const GetOne = `SELECT id, name, email, password, gender_id, role_id, coin, is_active, create_at, update_at, image FROM users WHERE id = $1`
 
-const DeleteUser = `UPDATE users SET is_deleted = true, delete_at = NOW() WHERE id = $1`
+const DeleteUser = `UPDATE users SET is_active = false, delete_at = NOW() WHERE id = $1`
 
-const UpdateUser = `UPDATE users SET name = $2, email = $3, password = $4, gender_id = $5, update_at = NOW(), image = $6 WHERE id = $1`
+const UpdateUser = `UPDATE users SET name = $2, email = $3, gender_id = $4, update_at = NOW(), image = $5 WHERE id = $1`
 
 const TakeBook = `CALL takeBook($1, $2)`
 
@@ -31,3 +31,7 @@ const TokenReq = `SELECT id, name, email, password, gender_id, role_id FROM user
 const CheckReq = `SELECT COUNT(*) FROM req_admin WHERE user_id = $1`
 
 const GetReqAdmin = `SELECT id, user_id, request_date FROM req_admin WHERE is_acc IS NULL`
+
+const CheckPassword = `SELECT COUNT(*) FROM users WHERE id = $1 AND password = $2`
+
+const ChangePass = `UPDATE users SET password = $2 WHERE id = $1`

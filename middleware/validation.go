@@ -31,7 +31,7 @@ func StructValidator(models interface{}) []*Validator {
 }
 
 func InputChecker(data ...string) error {
-	regex, err := regexp.Compile(`([a-zA-Z1-9@. ]+)`)
+	regex, err := regexp.Compile(`([a-zA-Z1-90@. ]+)`)
 	if err != nil {
 		return fmt.Errorf("cant compile regex")
 	}
