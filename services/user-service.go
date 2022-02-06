@@ -32,10 +32,11 @@ type userS struct {
 	userR repository.UserR
 	db    *pgxpool.Pool
 	jwtS  JWTS
+	file  File
 }
 
-func NewUserS(db *pgxpool.Pool, userR repository.UserR, jwtS JWTS) UserS {
-	return &userS{db: db, userR: userR, jwtS: jwtS}
+func NewUserS(db *pgxpool.Pool, userR repository.UserR, jwtS JWTS, file File) UserS {
+	return &userS{db: db, userR: userR, jwtS: jwtS, file: file}
 }
 
 func (u *userS) GetAll(ctx context.Context, token string) ([]*models.User, error) {
@@ -89,18 +90,20 @@ func (u *userS) GetOne(ctx context.Context, token string) (models.User, error) {
 func (u *userS) Update(ctx context.Context, update models.Update, t string) (string, error) {
 	valToken, err := u.jwtS.ValidateToken(t)
 	if err != nil {
-		return "",  err
+		return "", err
 	}
 
 	claims := valToken.Claims.(jwt.MapClaims)
-
+	
 	err = u.userR.Update(ctx, update, claims["id"].(float64))
 	if err != nil {
-		return  "", err
+		return "", err
 	}
 
 	token := u.jwtS.GenerateToken(uint64(claims["id"].(float64)), update.Name, update.Email, claims["password"].(string), update.GenderID, uint16(claims["role_id"].(float64)))
-	
+
+	u.file.Upload(update.B64Name, update.Image)
+
 	return token, nil
 }
 
@@ -109,29 +112,29 @@ func (u *userS) ChangePassword(ctx context.Context, password models.ChangePass, 
 	if err != nil {
 		return "", err
 	}
-	
+
 	claims := t.Claims.(jwt.MapClaims)
 
 	var user models.User
 	u.userR.GetOne(ctx, claims["id"].(float64)).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.GenderID, &user.RoleID, &user.Coin, &user.IsActive, &user.CreateAt, &user.UpdateAt, &user.Image)
-	
+
 	if err = comparePwd([]byte(user.Password), password.OldPass); err != nil {
 		return "", fmt.Errorf("invalid credential")
 	}
-	
+
 	if password.NewPass != password.RetypePass {
 		return "", fmt.Errorf("retype password is not same")
 	}
-	
+
 	hash, err := hashAndSalt(password.NewPass)
 	if err != nil {
 		return "", err
 	}
-	
+
 	err = u.userR.ChangePassword(ctx, claims["id"].(float64), hash)
 
 	newToken := u.jwtS.GenerateToken(uint64(claims["id"].(float64)), user.Name, user.Email, hash, user.GenderID, uint16(claims["role_id"].(float64)))
-	
+
 	return newToken, err
 }
 
@@ -312,8 +315,8 @@ func (u *userS) AnsAdmin(ctx context.Context, answer models.Request, token strin
 	}
 
 	claims := t.Claims.(jwt.MapClaims)
-	
-	if claims["role_id"] != 2.0{
+
+	if claims["role_id"] != 2.0 {
 		return "", fmt.Errorf("you are not admin")
 	}
 

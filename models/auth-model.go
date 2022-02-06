@@ -13,6 +13,7 @@ type Register struct {
 }
 
 type OTP struct {
-	Email string `json:"email"`
-	Otp   string `json:"otp"`
+	Email  string `json:"email"`
+	Otp    string `json:"otp"`
+	Action string `json:"action"`
 }

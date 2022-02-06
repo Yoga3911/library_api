@@ -7,6 +7,8 @@ import (
 	"project_restapi/middleware"
 	"project_restapi/models"
 	"project_restapi/services"
+	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -16,6 +18,7 @@ type UserC interface {
 	GetByToken(c *fiber.Ctx) error
 	UpdateUser(c *fiber.Ctx) error
 	ChangePassword(c *fiber.Ctx) error
+	ChangeEmail(c *fiber.Ctx) error
 	DeleteUser(c *fiber.Ctx) error
 	TakeBook(c *fiber.Ctx) error
 	GetBookById(c *fiber.Ctx) error
@@ -85,12 +88,14 @@ func (u *userC) UpdateUser(c *fiber.Ctx) error {
 		return helper.Response(c, fiber.StatusConflict, nil, errors, false)
 	}
 
+	update.Image = strconv.FormatInt(time.Now().UnixMilli(), 10) + update.Email + "." + update.B64Name[11:14]
 	token, err := u.userS.Update(c.Context(), update, c.Get("Authorization"))
 	if err != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
 	}
-	u.cache.Del("users")
 
+	u.cache.Del("users")
+	update.B64Name = "-"
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data":    update,
 		"token":   token,
@@ -100,6 +105,25 @@ func (u *userC) UpdateUser(c *fiber.Ctx) error {
 }
 
 func (u *userC) ChangePassword(c *fiber.Ctx) error {
+	var password models.ChangePass
+
+	err := c.BodyParser(&password)
+	if err != nil {
+		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
+	}
+
+	token, err := u.userS.ChangePassword(c.Context(), password, c.Get("Authorization"))
+	if err != nil {
+		return helper.Response(c, fiber.StatusBadRequest, nil, err.Error(), false)
+	}
+
+	u.cache.Del("users")
+
+	return helper.Response(c, fiber.StatusOK, token, "Change user password success!", true)
+}
+
+func (u *userC) ChangeEmail(c *fiber.Ctx) error {
+	 c.Get("Authorization")
 	var password models.ChangePass
 
 	err := c.BodyParser(&password)

@@ -21,6 +21,7 @@ type Update struct {
 	Email    string `json:"email" validate:"required,email,max=100"`
 	GenderID uint16 `json:"gender_id" validate:"required"`
 	Image    string `json:"image"`
+	B64Name  string `json:"b64_name"`
 }
 
 type ChangePass struct {

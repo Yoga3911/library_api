@@ -2,24 +2,22 @@ package main
 
 import (
 	"context"
+	"github.com/gofiber/fiber/v2"
+	"github.com/jasonlvhit/gocron"
 	"log"
 	"os"
 	"os/signal"
 	"project_restapi/routes"
 	"syscall"
-
-	"github.com/gofiber/fiber/v2"
-	"github.com/jasonlvhit/gocron"
 )
 
 func main() {
 	defer routes.DB.Close()
 	app := fiber.New()
 	routes.Route(app)
-
 	go func() {
 		log.Println("Web Server")
-		log.Fatal(app.Listen(":"+os.Getenv("PORT")))
+		log.Fatal(app.Listen(":" + os.Getenv("PORT")))
 	}()
 
 	go func() {

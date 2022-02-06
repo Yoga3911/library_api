@@ -21,8 +21,10 @@ var (
 
 	jwtS services.JWTS = services.NewJWTS()
 
+	file services.File = services.NewFile("library-api-c12ef.appspot.com", "library-api-c12ef-firebase-adminsdk-p30bt-0fc4391f72.json")
+
 	userR repository.UserR  = repository.NewUserR(DB)
-	userS services.UserS    = services.NewUserS(DB, userR, jwtS)
+	userS services.UserS    = services.NewUserS(DB, userR, jwtS, file)
 	userC controllers.UserC = controllers.NewUserC(userS, cacheS)
 
 	authR repository.AuthR  = repository.NewAuthR(DB)
@@ -40,7 +42,7 @@ func Route(app *fiber.App) {
 	api.Post("/auth/register", authC.Register)
 	api.Get("/auth/logout", authC.Logout)
 
-	api.Get("/auth/otp/:email", authC.SendVerif)
+	api.Post("/auth/send-otp", authC.SendVerif)
 	api.Post("/auth/otp", authC.Verif)
 
 	api.Get("/users", userC.GetAll)

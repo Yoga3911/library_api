@@ -11,7 +11,7 @@ func SendOTP(otp string, receiver string) {
 	m.SetHeader("From", "yoga3911@gmail.com")
 	m.SetHeader("To", receiver)
 	m.SetHeader("Subject", "OTP Code")
-	m.SetBody("text/plain", otp)
+	m.SetBody("text/plain", "Your OTP code: " + otp)
 	m.Attach("./assets/images/bagan.png")
 
 	d := gomail.NewDialer("smtp.gmail.com", 587, "yoga3911@gmail.com", "zjwwbwyxwucovmvj")

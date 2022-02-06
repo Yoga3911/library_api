@@ -47,9 +47,9 @@ func (a *authC) Login(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"data": usr,
-		"token": token,
-		"status": true,
+		"data":    usr,
+		"token":   token,
+		"status":  true,
 		"message": "Login success!",
 	})
 }
@@ -82,18 +82,24 @@ func (a *authC) Logout(c *fiber.Ctx) error {
 }
 
 func (a *authC) SendVerif(c *fiber.Ctx) error {
-	var user models.Register
+	var user models.OTP
 
-	user.Email = c.Params("email")
+	err := c.BodyParser(&user)
+	if err != nil {
+		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
+	}
 
 	otp, err := helper.GenerateOTP(6)
 	if err != nil {
 		log.Println(err)
 	}
 
-	a.redis.Set(user.Email, &otp)
-
 	helper.SendOTP(otp, user.Email)
+	if user.Action == "register" {
+		a.redis.Set(user.Email+"register", &otp)
+	} else {
+		a.redis.Set(user.Email+"email", &otp)
+	}
 
 	return helper.Response(c, fiber.StatusOK, nil, "Send OTP successful!", true)
 }
@@ -105,17 +111,24 @@ func (a *authC) Verif(c *fiber.Ctx) error {
 	if err != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
 	}
-	code := a.redis.Get(otp.Email)
+
+	var code interface{}
+	if otp.Action == "register" {
+		code = a.redis.Get(otp.Email+"register")
+		a.redis.Del(otp.Email+"register")
+	} else {
+		code = a.redis.Get(otp.Email+"email")
+		a.redis.Del(otp.Email+"email")
+	}
 
 	if code != otp.Otp {
 		return helper.Response(c, fiber.StatusBadRequest, nil, "Invalid OTP code!", false)
 	}
-	
+
 	if err = a.authS.UpdateActive(c.Context(), otp.Email); err != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
 	}
-	
-	a.redis.Del(otp.Email)
+
 	a.cache.Del("users")
 
 	return helper.Response(c, fiber.StatusOK, nil, "Verify OTP code success!", true)
