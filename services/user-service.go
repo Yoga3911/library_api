@@ -101,8 +101,9 @@ func (u *userS) Update(ctx context.Context, update models.Update, t string) (str
 	}
 
 	token := u.jwtS.GenerateToken(uint64(claims["id"].(float64)), update.Name, update.Email, claims["password"].(string), update.GenderID, uint16(claims["role_id"].(float64)))
-
-	u.file.Upload(update.B64Name, update.Image)
+	if update.B64Name != "-" {
+		u.file.Upload(update.B64Name, update.Image, ctx)
+	}
 
 	return token, nil
 }

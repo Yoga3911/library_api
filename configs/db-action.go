@@ -3,92 +3,96 @@ package configs
 import (
 	"context"
 	"project_restapi/sql"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
+
 func migration(db *pgxpool.Pool) error {
-	_, err := db.Exec(context.Background(), sql.Gender)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+	defer cancel()
+	_, err := db.Exec(ctx, sql.Gender)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.Role)
+	_, err = db.Exec(ctx, sql.Role)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.Users)
+	_, err = db.Exec(ctx, sql.Users)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.Genre)
+	_, err = db.Exec(ctx, sql.Genre)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.Book)
+	_, err = db.Exec(ctx, sql.Book)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.Req_admin)
+	_, err = db.Exec(ctx, sql.Req_admin)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.Transaction)
+	_, err = db.Exec(ctx, sql.Transaction)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.Reviews)
+	_, err = db.Exec(ctx, sql.Reviews)
 	if err != nil {
 		return err
 	}
 	
-	_, err = db.Exec(context.Background(), sql.Func_transaction)
+	_, err = db.Exec(ctx, sql.Func_transaction)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.Func_del_transaction)
+	_, err = db.Exec(ctx, sql.Func_del_transaction)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.Func_create_validate)
+	_, err = db.Exec(ctx, sql.Func_create_validate)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.Func_update_req)
+	_, err = db.Exec(ctx, sql.Func_update_req)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.Func_review)
+	_, err = db.Exec(ctx, sql.Func_review)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.Func_update_review)
+	_, err = db.Exec(ctx, sql.Func_update_review)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.Func_update_coin)
+	_, err = db.Exec(ctx, sql.Func_update_coin)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.Fetch)
+	_, err = db.Exec(ctx, sql.Fetch)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.Destroy)
+	_, err = db.Exec(ctx, sql.Destroy)
 	if err != nil {
 		return err
 	}
@@ -97,42 +101,44 @@ func migration(db *pgxpool.Pool) error {
 }
 
 func rollback(db *pgxpool.Pool) error {
-	_, err := db.Exec(context.Background(), sql.R_users)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+	defer cancel()
+	_, err := db.Exec(ctx, sql.R_users)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.R_role)
+	_, err = db.Exec(ctx, sql.R_role)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.R_gender)
+	_, err = db.Exec(ctx, sql.R_gender)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.R_book)
+	_, err = db.Exec(ctx, sql.R_book)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.R_genre)
+	_, err = db.Exec(ctx, sql.R_genre)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.R_transaction)
+	_, err = db.Exec(ctx, sql.R_transaction)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.R_req_admin)
+	_, err = db.Exec(ctx, sql.R_req_admin)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(context.Background(), sql.R_reviews)
+	_, err = db.Exec(ctx, sql.R_reviews)
 	if err != nil {
 		return err
 	}

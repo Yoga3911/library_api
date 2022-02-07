@@ -88,7 +88,12 @@ func (u *userC) UpdateUser(c *fiber.Ctx) error {
 		return helper.Response(c, fiber.StatusConflict, nil, errors, false)
 	}
 
-	update.Image = strconv.FormatInt(time.Now().UnixMilli(), 10) + update.Email + "." + update.B64Name[11:14]
+	if update.B64Name != "-" {
+		update.Image = strconv.FormatInt(time.Now().UnixMilli(), 10) + update.Email + "." + update.B64Name[11:14]
+	} else {
+		update.Image = "-"
+	}
+	
 	token, err := u.userS.Update(c.Context(), update, c.Get("Authorization"))
 	if err != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
