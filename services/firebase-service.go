@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	firebase "firebase.google.com/go"
 	"google.golang.org/api/option"
@@ -14,7 +15,7 @@ import (
 
 type File interface {
 	FirebaseInit() *firebase.App
-	Upload(b64Name string, fileName string, ctx context.Context) 
+	Upload(b64Name string, fileName string) 
 	Download() 
 }
 
@@ -38,7 +39,7 @@ func (f *file) FirebaseInit() *firebase.App {
 	return fb
 }
 
-func (f *file) Upload(b64Name string, fileName string, ctx context.Context) {
+func (f *file) Upload(b64Name string, fileName string) {
 	fb := f.FirebaseInit()
 	client, err := fb.Storage(context.Background())
 	if err != nil {
@@ -51,7 +52,8 @@ func (f *file) Upload(b64Name string, fileName string, ctx context.Context) {
 	}
 	i := strings.Index(b64Name, ",")
 	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(b64Name[i+1:]))
-
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
 	wc := bucket.Object(fileName).NewWriter(ctx)
 	_, err = io.Copy(wc, reader)
 	if err != nil {

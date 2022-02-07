@@ -102,7 +102,7 @@ func (u *userS) Update(ctx context.Context, update models.Update, t string) (str
 
 	token := u.jwtS.GenerateToken(uint64(claims["id"].(float64)), update.Name, update.Email, claims["password"].(string), update.GenderID, uint16(claims["role_id"].(float64)))
 	if update.B64Name != "-" {
-		u.file.Upload(update.B64Name, update.Image, ctx)
+		u.file.Upload(update.B64Name, update.Image)
 	}
 
 	return token, nil
