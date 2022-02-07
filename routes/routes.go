@@ -21,10 +21,10 @@ var (
 
 	jwtS services.JWTS = services.NewJWTS()
 
-	file services.File = services.NewFile()
+	// file services.File = services.NewFile()
 
 	userR repository.UserR  = repository.NewUserR(DB)
-	userS services.UserS    = services.NewUserS(DB, userR, jwtS, file)
+	userS services.UserS    = services.NewUserS(DB, userR, jwtS)
 	userC controllers.UserC = controllers.NewUserC(userS, cacheS)
 
 	authR repository.AuthR  = repository.NewAuthR(DB)
