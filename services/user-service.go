@@ -32,11 +32,11 @@ type userS struct {
 	userR repository.UserR
 	db    *pgxpool.Pool
 	jwtS  JWTS
-	// file  File
+	file  File
 }
 
-func NewUserS(db *pgxpool.Pool, userR repository.UserR, jwtS JWTS) UserS {
-	return &userS{db: db, userR: userR, jwtS: jwtS}
+func NewUserS(db *pgxpool.Pool, userR repository.UserR, jwtS JWTS, file File) UserS {
+	return &userS{db: db, userR: userR, jwtS: jwtS, file: file}
 }
 
 func (u *userS) GetAll(ctx context.Context, token string) ([]*models.User, error) {
@@ -101,9 +101,9 @@ func (u *userS) Update(ctx context.Context, update models.Update, t string) (str
 	}
 
 	token := u.jwtS.GenerateToken(uint64(claims["id"].(float64)), update.Name, update.Email, claims["password"].(string), update.GenderID, uint16(claims["role_id"].(float64)))
-	// if update.B64Name != "-" {
-	// 	u.file.Upload(update.B64Name, update.Image, ctx)
-	// }
+	if update.B64Name != "-" {
+		u.file.Upload(update.B64Name, update.Image, ctx)
+	}
 
 	return token, nil
 }

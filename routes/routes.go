@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"os"
 	"project_restapi/cache"
 	"project_restapi/configs"
 	"project_restapi/controllers"
@@ -15,16 +16,16 @@ import (
 var (
 	DB *pgxpool.Pool = configs.DatabaseConnection()
 
-	redisS cache.RedisC = cache.NewRedisC("redis-15271.c56.east-us.azure.cloud.redislabs.com:15271", "dnxQS1TFH2i7EAQnWjGDoC8dNBPTdNbh", 0)
+	redisS cache.RedisC = cache.NewRedisC(os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PASS"), 0)
 
 	cacheS cache.Cache = cache.NewCache()
 
 	jwtS services.JWTS = services.NewJWTS()
 
-	// file services.File = services.NewFile()
+	file services.File = services.NewFile(os.Getenv("BUCKET"), os.Getenv("CREDENTIAL"))
 
 	userR repository.UserR  = repository.NewUserR(DB)
-	userS services.UserS    = services.NewUserS(DB, userR, jwtS)
+	userS services.UserS    = services.NewUserS(DB, userR, jwtS, file)
 	userC controllers.UserC = controllers.NewUserC(userS, cacheS)
 
 	authR repository.AuthR  = repository.NewAuthR(DB)
