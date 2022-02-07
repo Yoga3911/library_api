@@ -13,7 +13,7 @@ import (
 )
 
 type UserS interface {
-	GetAll(ctx context.Context, token string) ([]*models.User, error)
+	GetAll(token string) ([]*models.User, error)
 	GetOne(ctx context.Context, token string) (models.User, error)
 	Update(ctx context.Context, update models.Update, token string) (string, error)
 	ChangePassword(ctx context.Context, password models.ChangePass, token string) (string, error)
@@ -39,10 +39,10 @@ func NewUserS(db *pgxpool.Pool, userR repository.UserR, jwtS JWTS, file File) Us
 	return &userS{db: db, userR: userR, jwtS: jwtS, file: file}
 }
 
-func (u *userS) GetAll(ctx context.Context, token string) ([]*models.User, error) {
+func (u *userS) GetAll(token string) ([]*models.User, error) {
 	var users []*models.User
 
-	pg, err := u.userR.GetAll(ctx)
+	pg, err := u.userR.GetAll()
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (u *userS) Update(ctx context.Context, update models.Update, t string) (str
 
 	token := u.jwtS.GenerateToken(uint64(claims["id"].(float64)), update.Name, update.Email, claims["password"].(string), update.GenderID, uint16(claims["role_id"].(float64)))
 	if update.B64Name != "-" {
-		u.file.Upload(update.B64Name, update.Image)
+		u.file.Upload(update.B64Name, update.Image, ctx)
 	}
 
 	return token, nil

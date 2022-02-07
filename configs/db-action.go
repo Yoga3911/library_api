@@ -10,7 +10,7 @@ import (
 
 
 func migration(db *pgxpool.Pool) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 	_, err := db.Exec(ctx, sql.Gender)
 	if err != nil {
@@ -101,7 +101,7 @@ func migration(db *pgxpool.Pool) error {
 }
 
 func rollback(db *pgxpool.Pool) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 	_, err := db.Exec(ctx, sql.R_users)
 	if err != nil {

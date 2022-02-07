@@ -11,7 +11,7 @@ import (
 
 type AuthS interface {
 	CreateUser(ctx context.Context, user models.Register) error
-	VerifyCredential(ctx context.Context, user models.Login) (string, models.User, error)
+	VerifyCredential(user models.Login) (string, models.User, error)
 	UpdateActive(ctx context.Context, email string) error
 }
 
@@ -55,13 +55,13 @@ func (a *authS) CreateUser(ctx context.Context, user models.Register) error {
 	return nil
 }
 
-func (a *authS) VerifyCredential(ctx context.Context, user models.Login) (string, models.User, error) {
+func (a *authS) VerifyCredential(user models.Login) (string, models.User, error) {
 	var usr models.User
 
 	var (
 		createT, updateT time.Time
 	)
-	err := a.authR.VerifyData(ctx, user.Email).Scan(&usr.ID, &usr.Name, &usr.Email, &usr.Password, &usr.GenderID, &usr.RoleID, &usr.Coin, &usr.IsActive, &createT, &updateT, &usr.Image)
+	err := a.authR.VerifyData(user.Email).Scan(&usr.ID, &usr.Name, &usr.Email, &usr.Password, &usr.GenderID, &usr.RoleID, &usr.Coin, &usr.IsActive, &createT, &updateT, &usr.Image)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows") {
 			return "", usr, fmt.Errorf("email not found")

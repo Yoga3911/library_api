@@ -48,7 +48,7 @@ func (u *userC) GetAll(c *fiber.Ctx) error {
 		return helper.Response(c, fiber.StatusOK, val, "Get all user success!", true)
 	}
 
-	users, err := u.userS.GetAll(c.Context(), c.Get("Authorization"))
+	users, err := u.userS.GetAll(c.Get("Authorization"))
 	if err != nil {
 		return helper.Response(c, fiber.StatusBadRequest, nil, err.Error(), false)
 	}
@@ -93,7 +93,7 @@ func (u *userC) UpdateUser(c *fiber.Ctx) error {
 	} else {
 		update.Image = "-"
 	}
-	
+
 	token, err := u.userS.Update(c.Context(), update, c.Get("Authorization"))
 	if err != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)

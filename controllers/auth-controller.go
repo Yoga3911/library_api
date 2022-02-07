@@ -41,7 +41,7 @@ func (a *authC) Login(c *fiber.Ctx) error {
 		return helper.Response(c, fiber.StatusConflict, nil, errors, false)
 	}
 
-	token, usr, err := a.authS.VerifyCredential(c.Context(), user)
+	token, usr, err := a.authS.VerifyCredential(user)
 	if err != nil {
 		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
 	}
