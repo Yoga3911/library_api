@@ -38,7 +38,7 @@ func DatabaseConnection() *pgxpool.Pool {
 		log.Println(err.Error())
 	}
 
-	action := 2
+	action := 1
 	switch action {
 	case 1:
 		migration(pg)
