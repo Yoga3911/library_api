@@ -4,14 +4,13 @@ import (
 	"context"
 	"project_restapi/models"
 	"project_restapi/sql"
-	"time"
 
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type UserR interface {
-	GetAll() (pgx.Rows, error)
+	GetAll(ctx context.Context) (pgx.Rows, error)
 	GetOne(ctx context.Context, id float64) pgx.Row
 	Update(ctx context.Context, update models.Update, id float64) error
 	ChangePassword(ctx context.Context, id float64, password string) error
@@ -43,9 +42,7 @@ func NewUserR(db *pgxpool.Pool) UserR {
 	}
 }
 
-func (u *userR) GetAll() (pgx.Rows, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
-	defer cancel()
+func (u *userR) GetAll(ctx context.Context) (pgx.Rows, error) {
 	pg, err := u.db.Query(ctx, sql.GetAll)
 
 	return pg, err

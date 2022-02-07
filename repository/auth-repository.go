@@ -4,7 +4,6 @@ import (
 	"context"
 	"project_restapi/models"
 	"project_restapi/sql"
-	"time"
 
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -12,7 +11,7 @@ import (
 
 type AuthR interface {
 	InsertData(ctx context.Context, user models.Register, hash string) error
-	VerifyData(email string) pgx.Row
+	VerifyData(ctx context.Context, email string) pgx.Row
 	CheckDuplicate(ctx context.Context, name string, email string) pgx.Row
 	UpdateActive(ctx context.Context, email string) error
 }
@@ -31,9 +30,7 @@ func (a *authR) InsertData(ctx context.Context, user models.Register, hash strin
 	return err
 }
 
-func (a *authR) VerifyData(email string) pgx.Row {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
-	defer cancel()
+func (a *authR) VerifyData(ctx context.Context, email string) pgx.Row {
 	pg := a.db.QueryRow(ctx, sql.VerifyCredential, email)
 
 	return pg

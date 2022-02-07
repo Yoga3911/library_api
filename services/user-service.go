@@ -13,7 +13,7 @@ import (
 )
 
 type UserS interface {
-	GetAll(token string) ([]*models.User, error)
+	GetAll(ctx context.Context, token string) ([]*models.User, error)
 	GetOne(ctx context.Context, token string) (models.User, error)
 	Update(ctx context.Context, update models.Update, token string) (string, error)
 	ChangePassword(ctx context.Context, password models.ChangePass, token string) (string, error)
@@ -39,10 +39,10 @@ func NewUserS(db *pgxpool.Pool, userR repository.UserR, jwtS JWTS, file File) Us
 	return &userS{db: db, userR: userR, jwtS: jwtS, file: file}
 }
 
-func (u *userS) GetAll(token string) ([]*models.User, error) {
+func (u *userS) GetAll(ctx context.Context, token string) ([]*models.User, error) {
 	var users []*models.User
 
-	pg, err := u.userR.GetAll()
+	pg, err := u.userR.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}

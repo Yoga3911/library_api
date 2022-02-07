@@ -31,7 +31,7 @@ func DatabaseConnection() *pgxpool.Pool {
 	}
 
 	config.MaxConns = 20
-	config.MinConns = 5
+	config.MinConns = 10
 
 	pg, err := pgxpool.ConnectConfig(context.Background(), config)
 	if err != nil {
