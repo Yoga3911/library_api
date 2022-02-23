@@ -6,7 +6,6 @@ import (
 	"project_restapi/models"
 	"project_restapi/repository"
 	"strings"
-	"time"
 )
 
 type AuthS interface {
@@ -25,22 +24,10 @@ func NewAuthS(authR repository.AuthR, jwtS JWTS) AuthS {
 }
 
 func (a *authS) CreateUser(ctx context.Context, user models.Register) error {
-	var (
-		name, email int8
-	)
-
-	err := a.authR.CheckDuplicate(ctx, user.Name, user.Email).Scan(&name, &email)
+	err := a.authR.CheckDuplicate(ctx, user.Name, user.Email)
 	if err != nil {
 		return err
-	}
-
-	if name != 0 {
-		return fmt.Errorf("duplicate name")
-	}
-
-	if email != 0 {
-		return fmt.Errorf("duplicate email")
-	}
+	}	
 
 	hash, err := hashAndSalt(user.Password)
 	if err != nil {
@@ -56,20 +43,13 @@ func (a *authS) CreateUser(ctx context.Context, user models.Register) error {
 }
 
 func (a *authS) VerifyCredential(ctx context.Context, user models.Login) (string, models.User, error) {
-	var usr models.User
-
-	var (
-		createT, updateT time.Time
-	)
-	err := a.authR.VerifyData(ctx, user.Email).Scan(&usr.ID, &usr.Name, &usr.Email, &usr.Password, &usr.GenderID, &usr.RoleID, &usr.Coin, &usr.IsActive, &createT, &updateT, &usr.Image)
+	usr, err := a.authR.VerifyData(ctx, user.Email)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows") {
 			return "", usr, fmt.Errorf("email not found")
 		}
 		return "", usr, fmt.Errorf(err.Error())
 	}
-	usr.CreateAt = createT.Format("02-01-2006")
-	usr.UpdateAt = updateT.Format("02-01-2006")
 
 	if !usr.IsActive {
 		return "", usr, fmt.Errorf("email not found")

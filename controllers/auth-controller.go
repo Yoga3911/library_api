@@ -95,11 +95,7 @@ func (a *authC) SendVerif(c *fiber.Ctx) error {
 	}
 
 	helper.SendOTP(otp, user.Email)
-	if user.Action == "register" {
-		a.redis.Set(user.Email+"register", &otp)
-	} else {
-		a.redis.Set(user.Email+"email", &otp)
-	}
+	a.redis.Set(user.Email, &otp)
 
 	return helper.Response(c, fiber.StatusOK, nil, "Send OTP successful!", true)
 }
@@ -112,14 +108,8 @@ func (a *authC) Verif(c *fiber.Ctx) error {
 		return helper.Response(c, fiber.StatusConflict, nil, err.Error(), false)
 	}
 
-	var code interface{}
-	if otp.Action == "register" {
-		code = a.redis.Get(otp.Email+"register")
-		a.redis.Del(otp.Email+"register")
-	} else {
-		code = a.redis.Get(otp.Email+"email")
-		a.redis.Del(otp.Email+"email")
-	}
+	code := a.redis.Get(otp.Email)
+	a.redis.Del(otp.Email)
 
 	if code != otp.Otp {
 		return helper.Response(c, fiber.StatusBadRequest, nil, "Invalid OTP code!", false)
