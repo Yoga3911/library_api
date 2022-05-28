@@ -1,7 +1,7 @@
 module project_restapi
 
-// +heroku goVersion go1.17
-go 1.17
+// +heroku goVersion go1.18
+go 1.18
 
 require (
 	github.com/dgraph-io/ristretto v0.1.0

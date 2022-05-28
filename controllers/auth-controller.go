@@ -109,7 +109,6 @@ func (a *authC) Verif(c *fiber.Ctx) error {
 	}
 
 	code := a.redis.Get(otp.Email)
-	a.redis.Del(otp.Email)
 
 	if code != otp.Otp {
 		return helper.Response(c, fiber.StatusBadRequest, nil, "Invalid OTP code!", false)
