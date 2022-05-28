@@ -46,7 +46,7 @@ func (r *redisC) Set(key string, value interface{}) {
 		log.Println(err)
 	}
 
-	err = client.Set(key, enc, time.Minute * 10).Err()
+	err = client.Set(key, enc, time.Minute * 5).Err()
 	if err != nil {
 		log.Println(err)
 	}

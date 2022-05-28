@@ -22,7 +22,7 @@ func DatabaseConnection() *pgxpool.Pool {
 		dsn = fmt.Sprintf("host=%s user=%s password=%s port=%s dbname=%s sslmode=disable TimeZone=Asia/Jakarta",
 			os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
 	case "prod":
-		dsn = os.Getenv("DATABASE_URL")
+		dsn = os.Getenv("DATABASE_URL2")
 	}
 
 	config, err := pgxpool.ParseConfig(dsn)
